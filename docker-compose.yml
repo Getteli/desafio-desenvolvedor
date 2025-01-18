@@ -1,0 +1,28 @@
+services:
+  db:
+    image: mongo:latest 
+    restart: always
+    ports:
+      - "27017:27017" 
+    # volumes:
+    #   - ./data/db:/data/db
+  web:
+    build: .
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    mem_limit: 4g
+  nginx:
+    image: nginx:latest
+    volumes:
+      - .:/var/www/html
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 81:80
+    depends_on:
+      - web
+      - db
+    mem_limit: 4g
+# volumes:
+#   db_data: {}
