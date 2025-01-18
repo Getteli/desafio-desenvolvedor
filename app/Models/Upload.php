@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
 
 class Upload extends Model
 {
-    //
+    protected $connection = 'mongodb';
+    protected $collection = 'uploads';
+    protected $fillable = ['name', 'path', 'size'];
+    protected $guarded = ['_id'];
 }

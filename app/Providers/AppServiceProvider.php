@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Extensions\MongoSessionHandler;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
