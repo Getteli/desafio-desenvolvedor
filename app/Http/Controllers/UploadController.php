@@ -3,37 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\Upload;
+use App\Models\UploadHistory;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class UploadController extends Controller
 {
 
     /**
-     * Listar documentos
+     * Listar os dados
      *
      * @param Request $request
      * @return void
      */
     public function index(Request $request)
     {
-        if ($request->has('name'))
+        $query = Upload::query();
+
+        if ($request->has('TckrSymb'))
         {
-            $upload = Upload::where('name', $request->name)->firstOrFail();
-            return response()->json(['upload' => $upload]);
+            $query->where('TckrSymb', $request->TckrSymb);
         }
-        elseif ($request->has('date'))
+
+        if ($request->has('RptDt'))
         {
-            $upload = Upload::whereDate('created_at', $request->date)->get();
-            return response()->json(['uploads' => $upload]);
+            $query->where('RptDt', $request->RptDt);
         }
-        else
-        {
-            return response()->json(['uploads' => Upload::paginate(10)]);
-        }
+
+        $uploads = $query->paginate($request->get('per_page') ?? 10);
+
+        return response()->json(['uploads' => $uploads]);
     }
 
     /**
-     * Armazenar o documento
+     * Armazenar o dados
      *
      * @param Request $request
      * @return void
@@ -48,10 +51,11 @@ class UploadController extends Controller
             return response()->json(['error' => 'Este formato é invalido, tente outro por favor.'], 422);
         }
 
-        $filePath = $file->store('uploads');
+        $filePath = $file->store('uploads', 'public');
+        $path = "storage/" . $filePath;
 
         // Verificar se o arquivo já foi enviado
-        $duplicate = UploadHistory::where('file_path', $filePath)->first();
+        $duplicate = UploadHistory::where('file_path', $path)->first();
         if ($duplicate) 
         {
             return response()->json(['error' => 'Já existe um arquivo com esse nome'], 409);
@@ -59,17 +63,37 @@ class UploadController extends Controller
 
         // Salvar histórico do upload
         UploadHistory::create([
-            'file_path' => $filePath,
+            'file_path' => $path,
             'file_name' => $file->getClientOriginalName(),
             'uploaded_at' => now(),
-            'uploaded_by' => auth()->user()->id
+            'uploaded_by' => auth()->user()->name
         ]);
 
-        return response()->json(['message' => 'Upload de arquivo realizado com sucesso', 'file_path' => $filePath], 200);
+        // Abrir o arquivo e processar as linhas
+        $file = IOFactory::load($path);
+        $worksheet = $file->getActiveSheet();
+        $rows = $worksheet->toArray();
+
+        foreach ($rows as $key => $row)
+        {
+            // pula as 2 primeiras linhas
+            if ($key < 2) continue;
+
+            Upload::create([
+                'RptDt' => $row[0],
+                'TckrSymb' => $row[1],
+                'MktNm' => $row[5],
+                'SctyCtgyNm' => $row[6],
+                'ISIN' => $row[15],
+                'CrpnNm' => $row[47]
+            ]);
+        }
+
+        return response()->json(['message' => 'Upload de arquivo realizado com sucesso', 'file_path' => $path], 200);
     }
 
     /**
-     * Retornar um upload
+     * Retornar uma linha dos dados
      *
      * @param [type] $id
      * @return void
@@ -77,7 +101,7 @@ class UploadController extends Controller
     public function show($id)
     {
         $upload = Upload::findOrFail($id);
-        return response()->file(storage_path('app/' . $upload->path));
+        return response()->json($upload);
     }
     
 }

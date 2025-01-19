@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\UploadHistoryController;
 
 // Middleware de autenticação
 Route::group([
@@ -24,4 +25,7 @@ Route::middleware('auth:api')->group(function () {
 
     // Endpoint para buscar conteúdo do arquivo
     Route::get('/upload/{id}', [UploadController::class, 'show']);
+
+    // Endpoint para buscar o historico
+    Route::get('/history-upload', [UploadHistoryController::class, 'index']);
 });
