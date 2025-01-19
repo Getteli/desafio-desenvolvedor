@@ -10,4 +10,9 @@ class UploadHistory extends Model
     protected $collection = 'upload_histories';
     protected $fillable = ['file_path', 'file_name', 'uploaded_at', 'uploaded_by', 'created_at', 'updated_at'];
     protected $guarded = ['_id'];
+
+    public function getFilePathAttribute($value)
+    {
+        return asset($value);
+    }
 }
