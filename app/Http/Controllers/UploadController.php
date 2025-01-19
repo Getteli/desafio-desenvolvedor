@@ -53,9 +53,10 @@ class UploadController extends Controller
 
         $filePath = $file->store('uploads', 'public');
         $path = "storage/" . $filePath;
+        $name = $file->getClientOriginalName();
 
         // Verificar se o arquivo já foi enviado
-        $duplicate = UploadHistory::where('file_path', $path)->first();
+        $duplicate = UploadHistory::where('file_name', $name)->first();
         if ($duplicate) 
         {
             return response()->json(['error' => 'Já existe um arquivo com esse nome'], 409);
@@ -64,7 +65,7 @@ class UploadController extends Controller
         // Salvar histórico do upload
         UploadHistory::create([
             'file_path' => $path,
-            'file_name' => $file->getClientOriginalName(),
+            'file_name' => $name,
             'uploaded_at' => now(),
             'uploaded_by' => auth()->user()->name
         ]);
