@@ -21,12 +21,12 @@ class UploadHistoryController extends Controller
 
         if ($request->has('name'))
         {
-            $query->where('file_name', $request->name);
+            $query->where('file_name', "LIKE", "%".$request->name."%");
         }
 
         if ($request->has('date'))
         {
-            $query->whereDate('created_at', $request->date);
+            $query->whereDate('uploaded_at', $request->date);
         }
 
         $uploads = $query->paginate($request->get('per_page') ?? 10);
