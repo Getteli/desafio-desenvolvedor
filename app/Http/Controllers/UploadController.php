@@ -40,20 +40,32 @@ class UploadController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
-            'file' => 'required|mimes:xlsx,csv|max:2048',
-        ]);
-    
+        $allowedFileTypes = ['csv', 'xlsx', 'xls'];
         $file = $request->file('file');
-        $name = time() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('uploads', $name);
-    
-        $upload = new Upload();
-        $upload->name = $name;
-        $upload->path = $path;
-        $upload->save();
-    
-        return response()->json(['message' => 'Arquivo enviado com sucesso', 'file' => $upload]);
+
+        if (!$file || !in_array($file->getClientOriginalExtension(), $allowedFileTypes))
+        {
+            return response()->json(['error' => 'Este formato é invalido, tente outro por favor.'], 422);
+        }
+
+        $filePath = $file->store('uploads');
+
+        // Verificar se o arquivo já foi enviado
+        $duplicate = UploadHistory::where('file_path', $filePath)->first();
+        if ($duplicate) 
+        {
+            return response()->json(['error' => 'Já existe um arquivo com esse nome'], 409);
+        }
+
+        // Salvar histórico do upload
+        UploadHistory::create([
+            'file_path' => $filePath,
+            'file_name' => $file->getClientOriginalName(),
+            'uploaded_at' => now(),
+            'uploaded_by' => auth()->user()->id
+        ]);
+
+        return response()->json(['message' => 'Upload de arquivo realizado com sucesso', 'file_path' => $filePath], 200);
     }
 
     /**

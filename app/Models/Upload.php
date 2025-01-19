@@ -8,6 +8,6 @@ class Upload extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'uploads';
-    protected $fillable = ['name', 'path', 'size'];
+    protected $fillable = ['RptDt', 'TckrSymb', 'MktNm', 'SctyCtgyNm', 'ISIN', 'CrpnNm', 'created_at', 'updated_at'];
     protected $guarded = ['_id'];
 }
